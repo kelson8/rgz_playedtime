@@ -16,3 +16,12 @@ Config.Strings= {
 
 	['cars_blown_up'] = 'You have blown up ~y~%s~s~ cars.',
 }
+
+-- Time for the logs to be updated in the database, for now this is just hooked up to my vehicles exploded stat
+-- The time is in miliseconds.
+Config.LogWaitTime = 5000
+
+DebugConfig = {
+	DebugLogging = false,
+	DbLogging = false,
+}

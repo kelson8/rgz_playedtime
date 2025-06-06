@@ -21,7 +21,7 @@ end)
 
 
 -----
--- Not exactly sure what this one is doing 
+-- Not exactly sure what this one is doing
 -----
 function SecondsToClock(seconds)
     if seconds ~= nil then
@@ -89,12 +89,10 @@ function dropPlayer(source)
         -- I'll just trigger the client event which passes the variables to the server.
         -- Well this didn't seem to work either.
         -- TriggerClientEvent('rgz_playtime:trackCarsBlownup', source)
-
     else
         --print('rgz_playtime didnt recognize player')
     end
 end
-
 
 -----
 -- Discord message hook, I could possibly reuse this.
@@ -118,7 +116,7 @@ end
 -- end
 
 -- function updateVehiclesBlownupStat(source, carsBlownUp)
-    -- TriggerEvent('rgz_playtime:logVehiclesBlownUpStat', source, carsBlownUp)
+-- TriggerEvent('rgz_playtime:logVehiclesBlownUpStat', source, carsBlownUp)
 -- end
 
 -- TODO Make this log the stat when the player leaves
@@ -134,7 +132,6 @@ AddEventHandler('playerDropped', function(reason)
     -- TODO Test this here
     -- Well this doesn't work either. Not sure how to fire this off when the client leaves.
     -- TriggerClientEvent('rgz_playtime:trackCarsBlownup', source)
-
 end)
 
 -----
@@ -164,15 +161,20 @@ AddEventHandler('rgz_playtime:loggedIn', function(playerName, carsBlownUp)
             -- { ['identifier'] = identifier },
             { ['playername'] = _playerName, ['identifier'] = identifier },
             function(affectedRows)
-                --   print('Updated login')
+                if DebugConfig.DbLogging then
+                    print('Updated login count')
+                end
             end
         )
 
         -- TODO Fix this to work, not sure if it is needed here.
-        MySQL.Async.execute('UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
+        MySQL.Async.execute(
+            'UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
             { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
             function(affectedRows)
-                --   print('Updated vehicles exploded stat')
+                if DebugConfig.DbLogging then
+                    print('Updated vehicles exploded stat')
+                end
             end
         )
 
@@ -198,18 +200,23 @@ AddEventHandler('rgz_playtime:loggedIn', function(playerName, carsBlownUp)
             'INSERT INTO kc_playtime (identifier, playername, time, login) VALUES (@identifier, @playername, @time, @login)',
             { ['identifier'] = identifier, ['playername'] = _playerName, ['time'] = 0, ['login'] = 0 },
             function(affectedRows)
-                --   print(affectedRows)
+                if DebugConfig.DbLogging then
+                    --   print(affectedRows)
+                end
             end
         )
 
 
         -- This seems like it is working now, if the player doesn't have a value in the 'kc_playtime' or 'kc_stats' tables,
         -- this will run.
-        MySQL.Async.execute('INSERT INTO kc_stats (identifier, playername, vehicles_exploded) VALUES (@identifier, @playername, @vehicles_exploded)',
+        MySQL.Async.execute(
+            'INSERT INTO kc_stats (identifier, playername, vehicles_exploded) VALUES (@identifier, @playername, @vehicles_exploded)',
             -- { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
             { ['identifier'] = identifier, ['playername'] = _playerName, ['vehicles_exploded'] = 0 },
             function(affectedRows)
-                  print('Created vehicles exploded table')
+                if DebugConfig.DbLogging then
+                    print('Created vehicles exploded table')
+                end
             end
         )
 
@@ -228,16 +235,18 @@ AddEventHandler('rgz_playtime:setupVehiclesBlownUpTable', function(playerName)
     local identifier = GetPlayerIdentifiers(_source)[1]
 
     -- This works here!
-        MySQL.Async.execute('INSERT INTO kc_stats (identifier, playername, vehicles_exploded) VALUES (@identifier, @playername, @vehicles_exploded)',
-            -- { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
-            { ['identifier'] = identifier, ['playername'] = _playerName, ['vehicles_exploded'] = 0 },
-            function(affectedRows)
-                --   print('Created vehicles exploded table')
+    MySQL.Async.execute(
+        'INSERT INTO kc_stats (identifier, playername, vehicles_exploded) VALUES (@identifier, @playername, @vehicles_exploded)',
+        -- { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
+        { ['identifier'] = identifier, ['playername'] = _playerName, ['vehicles_exploded'] = 0 },
+        function(affectedRows)
+            if DebugConfig.DbLogging then
+                print('Created vehicles exploded table')
             end
-        )
+        end
+    )
 
-        -- TriggerClientEvent('rgz_playtime:notif', _source, "Setup vehicles stat in DB.")
-
+    -- TriggerClientEvent('rgz_playtime:notif', _source, "Setup vehicles stat in DB.")
 end)
 
 
@@ -261,17 +270,21 @@ AddEventHandler('rgz_playtime:logVehiclesBlownUpStat', function(playerName, cars
 
         -- This works in here!
         -- TODO Figure out how to query this and display it in the server as a command.
-            MySQL.Async.execute('UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
+        MySQL.Async.execute(
+            'UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
             { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
             function(affectedRows)
-                --   print('Updated vehicles exploded stat')
+                -- This can be very spammy every 5 seconds or so.
+                -- if DebugConfig.DbLogging then
+                --     print('Updated vehicles exploded stat')
+                -- end
             end
         )
 
 
         -- These become very spammy if running this every 5 seconds.
         -- TriggerClientEvent('rgz_playtime:notif', _source,
-            -- string.format(Config.Strings['cars_blown_up'], carsBlownUp))
+        -- string.format(Config.Strings['cars_blown_up'], carsBlownUp))
 
         -- print(("Cars blown up logged: %i"):format(carsBlownUp))
     end
@@ -281,7 +294,7 @@ end)
 -- Query the stat for the commands and displaying in game.
 -----
 RegisterServerEvent('rgz_playtime:getVehiclesBlownUpStat')
-AddEventHandler('rgz_playtime:getVehiclesBlownUpStat', function (playerName)
+AddEventHandler('rgz_playtime:getVehiclesBlownUpStat', function(playerName)
     local _source = source
     local _playerName = playerName
     local identifier = GetPlayerIdentifiers(_source)[1]
@@ -294,18 +307,31 @@ AddEventHandler('rgz_playtime:getVehiclesBlownUpStat', function (playerName)
         -- local totaltimeFormatted = SecondsToClock(playersData[identifier])
 
         -- This works in here!
-        -- TODO Figure out how to query this and display it in the server as a command.
-            MySQL.Async.execute('UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
-            { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
-            function(affectedRows)
-                --   print('Updated vehicles exploded stat')
+        -- This works for logging to the console
+        -- https://coxdocs.dev/oxmysql/Functions/query
+        MySQL.Async.fetchAll('SELECT `vehicles_exploded` from `kc_stats` WHERE `identifier` = ?',
+            {
+                identifier
+            }, function(response)
+                if response then
+                    for i = 1, #response do
+                        local row = response[i]
+
+                        local consoleMessage = ("%s - Vehicles exploded: %i"):format(playerName, row.vehicles_exploded)
+                        local playerMessage = ("You have blown up: %i vehicles."):format(row.vehicles_exploded)
+
+                        if DebugConfig.DebugLogging then
+                            print(consoleMessage)
+                        end
+
+                        TriggerClientEvent('rgz_playtime:notif', _source, playerMessage)
+                    end
+                end
             end
         )
-
-
         -- These become very spammy if running this every 5 seconds.
         -- TriggerClientEvent('rgz_playtime:notif', _source,
-            -- string.format(Config.Strings['cars_blown_up'], carsBlownUp))
+        -- string.format(Config.Strings['cars_blown_up'], carsBlownUp))
 
         -- print(("Cars blown up logged: %i"):format(carsBlownUp))
     end

@@ -3,7 +3,7 @@ Fivem total time played
 
 I am working on adding a vehicles blown up stat and I will most likely add more to this later.
 
-So far it can log the vehicles blown up every 5 seconds into the database.
+So far it can log the vehicles blown up for however long is specified in the config into the database.
 
 No ESX or framework needed, only dependency is OxMySql and MariaDb/MySql.
 
