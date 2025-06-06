@@ -8,8 +8,11 @@ Config.Strings= {
 	['sessiontime'] = 'Session time',
 	['totaltime'] = 'Total time',
 	-- player notifications
-	['welcome1st'] = 'Welcome on our server!',
+	['welcome1st'] = 'Welcome to the KCNet FiveM Server!',
+	-- ['welcome1st'] = 'Welcome on our server!',
 	['welcome'] = 'Welcome back!',
 	['ptotaltime'] = 'Total time spent on server: ',
 	['loggedin'] = 'You have logged in ~y~%s~s~ times',
+
+	['cars_blown_up'] = 'You have blown up ~y~%s~s~ cars.',
 }
