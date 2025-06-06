@@ -24,4 +24,7 @@ Config.LogWaitTime = 5000
 DebugConfig = {
 	DebugLogging = false,
 	DbLogging = false,
+
+	-- Enable debug text on screen for now.
+	DebugMode = true,
 }

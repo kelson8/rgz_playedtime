@@ -138,8 +138,8 @@ end)
 -- Event that fires off when the player spawns.
 -----
 RegisterNetEvent('rgz_playtime:loggedIn')
--- AddEventHandler('rgz_playtime:loggedIn', function(playerName)
-AddEventHandler('rgz_playtime:loggedIn', function(playerName, carsBlownUp)
+AddEventHandler('rgz_playtime:loggedIn', function(playerName)
+-- AddEventHandler('rgz_playtime:loggedIn', function(playerName, carsBlownUp)
     local _source = source
     local _playerName = playerName
     local identifier = GetPlayerIdentifiers(_source)[1]
@@ -167,16 +167,26 @@ AddEventHandler('rgz_playtime:loggedIn', function(playerName, carsBlownUp)
             end
         )
 
+        -- TriggerClientEvent('rgz_playtime:updateCarsBlownUpStat', _source, )
+
         -- TODO Fix this to work, not sure if it is needed here.
-        MySQL.Async.execute(
-            'UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
-            { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
-            function(affectedRows)
-                if DebugConfig.DbLogging then
-                    print('Updated vehicles exploded stat')
-                end
-            end
-        )
+        -- TODO Make this grab the old value from the database, not exactly sure how to do that just yet.
+        -- MySQL.Async.execute(
+        --     'UPDATE kc_stats SET vehicles_exploded = vehicles_exploded, playername = @playername WHERE identifier = @identifier',
+        --     -- { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
+        --     { ['playername'] = _playerName, ['identifier'] = identifier },
+        --     function(affectedRows)
+        --         if DebugConfig.DbLogging then
+        --             print('Updated vehicles exploded stat')
+        --         end
+        --     end
+        -- )
+
+        -- TODO Setup a client event trigger that sets the stats back to what they are from the DB
+        -- I think that is what I am missing.
+        -- This might work?
+        -- Well this didn't work.
+        TriggerEvent('rgz_playtime:getVehiclesBlownUpStat')
 
 
         -- carsBlownUp
@@ -269,7 +279,6 @@ AddEventHandler('rgz_playtime:logVehiclesBlownUpStat', function(playerName, cars
         -- local totaltimeFormatted = SecondsToClock(playersData[identifier])
 
         -- This works in here!
-        -- TODO Figure out how to query this and display it in the server as a command.
         MySQL.Async.execute(
             'UPDATE kc_stats SET vehicles_exploded = @vehicles_exploded, playername = @playername WHERE identifier = @identifier',
             { ['vehicles_exploded'] = carsBlownUp, ['playername'] = _playerName, ['identifier'] = identifier },
@@ -280,6 +289,11 @@ AddEventHandler('rgz_playtime:logVehiclesBlownUpStat', function(playerName, cars
                 -- end
             end
         )
+
+
+        -- Run this to update the display on screen.
+        -- TriggerClientEvent('rgz_playedtime:updateVehicleBlownupDisplay', _source, row.vehicles_exploded)
+        TriggerClientEvent('rgz_playedtime:updateVehicleBlownupDisplay', _source, carsBlownUp)
 
 
         -- These become very spammy if running this every 5 seconds.
@@ -324,7 +338,17 @@ AddEventHandler('rgz_playtime:getVehiclesBlownUpStat', function(playerName)
                             print(consoleMessage)
                         end
 
+
+                        -- First, sync the previous stats
+                        -- TODO Test this
+                        TriggerClientEvent('rgz_playtime:updateCarsBlownUpStat', _source, row.vehicles_exploded)
+                        --
+
                         TriggerClientEvent('rgz_playtime:notif', _source, playerMessage)
+
+                        -- Set the message in the game, TODO Test this.
+                        -- This works as an event!
+                        TriggerClientEvent('rgz_playedtime:updateVehicleBlownupDisplay', _source, row.vehicles_exploded)
                     end
                 end
             end

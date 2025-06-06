@@ -4,6 +4,8 @@ function notification(msg)
 	DrawNotification(false, true)
 end
 
+-- Well for some reason this just wipes the vehicles blown up stat if I exit FiveM and relaunch it.
+
 local firstSpawn = false
 
 TriggerEvent('chat:addSuggestion', '/stat_cars_exploded',
@@ -12,7 +14,7 @@ TriggerEvent('chat:addSuggestion', '/stat_cars_exploded',
 TriggerEvent('chat:addSuggestion', '/setup_vehicle_stats',
 	'Setup the stats table in the database with the vehicles exploded.')
 
-TriggerEvent('chat:addSuggestion', '/db_blown_up',
+TriggerEvent('chat:addSuggestion', '/get_blown_up',
 	'List how many vehicles you have blown up from the database.')
 
 TriggerEvent('chat:addSuggestion', '/time1',
@@ -25,6 +27,13 @@ function getCarsBlownUp()
 	return carsBlownUp
 end
 
+-- I got this working! Now it restores the previous stats.
+RegisterNetEvent('rgz_playtime:updateCarsBlownUpStat')
+AddEventHandler('rgz_playtime:updateCarsBlownUpStat', function (carsBlownUp)
+	local carsBlownUpStat = GetHashKey("MP0_CARS_EXPLODED")
+	StatSetInt(carsBlownUpStat, carsBlownUp, true)
+end)
+
 -----
 -- Events
 -----
@@ -32,8 +41,8 @@ end
 AddEventHandler('playerSpawned', function()
 	local carsBlownUp = getCarsBlownUp()
 	if firstSpawn == false then
-		-- TriggerServerEvent('rgz_playtime:loggedIn', GetPlayerName(PlayerId()))
-		TriggerServerEvent('rgz_playtime:loggedIn', GetPlayerName(PlayerId()), carsBlownUp)
+		TriggerServerEvent('rgz_playtime:loggedIn', GetPlayerName(PlayerId()))
+		-- TriggerServerEvent('rgz_playtime:loggedIn', GetPlayerName(PlayerId()), carsBlownUp)
 		firstSpawn = true
 	end
 end)
@@ -48,6 +57,8 @@ end)
 
 -- Well this works if i manually run the 'trigger_stat_update' command but doesn't run on disconnect like the
 -- playtime tracker does, I would like to fix that.
+
+-- TODO Fix this to where it grabs the old value if there is one instead of restting it when relaunching the game.
 RegisterNetEvent('rgz_playtime:trackCarsBlownup')
 AddEventHandler('rgz_playtime:trackCarsBlownup', function()
 	-- end)
@@ -61,7 +72,13 @@ AddEventHandler('rgz_playtime:trackCarsBlownup', function()
 
 	-- TODO Test this.
 	-- print(("Cars blown up: %d"):format(carsBlownUp))
-	TriggerServerEvent('rgz_playtime:logVehiclesBlownUpStat', GetPlayerName(PlayerId()), carsBlownUp)
+	-- This fixed it!! Now the previous stats show up from the DB.
+	if carsBlownUp ~= 0 then
+		TriggerServerEvent('rgz_playtime:logVehiclesBlownUpStat', GetPlayerName(PlayerId()), carsBlownUp)
+	else
+		-- Sync up the previous stats
+		TriggerServerEvent('rgz_playtime:getVehiclesBlownUpStat', GetPlayerName(PlayerId()))
+	end
 end)
 
 -----
@@ -90,7 +107,7 @@ RegisterCommand("setup_vehicle_stats", function()
 end, false)
 
 -- List the vehicles blown up from the database.
-RegisterCommand("db_blown_up", function()
+RegisterCommand("get_blown_up", function()
 	TriggerServerEvent('rgz_playtime:getVehiclesBlownUpStat', GetPlayerName(PlayerId()))
 end, false)
 
@@ -99,7 +116,14 @@ Citizen.CreateThread(function()
 	while true do
 		Wait(Config.LogWaitTime)
 		local carsBlownUp = getCarsBlownUp()
+
 		-- Log the vehicles blown up.
-		TriggerServerEvent('rgz_playtime:logVehiclesBlownUpStat', GetPlayerName(PlayerId()), carsBlownUp)
+		-- This fixed it!! Now the previous stats show up from the DB.
+		if carsBlownUp ~= 0 then
+			TriggerServerEvent('rgz_playtime:logVehiclesBlownUpStat', GetPlayerName(PlayerId()), carsBlownUp)
+		else
+			-- Sync up the previous stats
+			TriggerServerEvent('rgz_playtime:getVehiclesBlownUpStat', GetPlayerName(PlayerId()))
+		end
 	end
 end)
